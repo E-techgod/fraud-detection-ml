@@ -84,6 +84,70 @@ The notebook is intended for:
 - Model training experiments
 - Evaluation and comparison across model versions
 
+## Metrics
+
+The notebook contains results for multiple model iterations.
+
+### Logistic Regression Baseline
+
+Training setup:
+
+- Original imbalanced dataset
+- 70/30 train-test split
+- `class_weight='balanced'`
+
+Reported results:
+
+- Accuracy: `94.63%`
+- Fraud precision: `0.02`
+- Fraud recall: `0.95`
+- Fraud F1-score: `0.04`
+
+Confusion matrix:
+
+- True negatives: `1,804,022`
+- False positives: `102,300`
+- False negatives: `132`
+- True positives: `2,332`
+
+### Logistic Regression With Engineered Features
+
+Reported results:
+
+- Accuracy: `95%`
+- Fraud precision: `0.02`
+- Fraud recall: `0.94`
+- Fraud F1-score: `0.04`
+- ROC AUC: `0.990`
+
+### Final Random Forest Model
+
+This is the model loaded by `fraud_detection.py`.
+
+Training setup:
+
+- Rebalanced dataset
+- All fraud rows
+- `100,000` sampled non-fraud rows
+
+Reported results:
+
+- Not-fraud precision: `1.00`
+- Not-fraud recall: `1.00`
+- Fraud precision: `0.96`
+- Fraud recall: `0.98`
+- Fraud F1-score: `0.97`
+- ROC AUC: `0.999`
+
+Evaluation support in the notebook:
+
+- Not fraud: `25,001`
+- Fraud: `2,053`
+
+Note:
+
+- The final random forest metrics were measured on a balanced dataset, so real-world precision may be lower on naturally imbalanced production data.
+
 ## Repository Structure
 
 Repository files:
