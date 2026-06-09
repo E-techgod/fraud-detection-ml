@@ -1,8 +1,8 @@
 # Fraud Detection App
 
-Streamlit app for scoring financial transactions as potentially fraudulent.
+Interactive Streamlit application for detecting potentially fraudulent financial transactions with a trained machine learning pipeline.
 
-The app supports:
+This project combines:
 
 - Single-transaction prediction from a form
 - Batch prediction from a CSV upload
@@ -11,9 +11,20 @@ The app supports:
 
 ## Overview
 
-This project uses a trained scikit-learn pipeline to classify transactions as fraud or not fraud based on transaction type, account balances, engineered balance-difference features, and a high-risk-country flag.
+The application uses a scikit-learn pipeline to classify transactions as fraud or not fraud based on transaction type, account balances, engineered balance-difference features, and a high-risk-country flag.
 
-The UI is built with Streamlit and is designed for quick local testing and demo use.
+The repository also includes a Jupyter notebook used for exploratory analysis, feature engineering, model comparison, and training experiments.
+
+## Quick Start
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install streamlit pandas joblib matplotlib shap scikit-learn
+streamlit run fraud_detection.py
+```
+
+Before running the app, make sure `fraud_detection_model.pkl` exists in the project root.
 
 ## Features
 
@@ -28,38 +39,38 @@ The UI is built with Streamlit and is designed for quick local testing and demo 
 
 The current app expects a saved model file named `fraud_detection_model.pkl` in the project root.
 
-Deployed model architecture:
+### Architecture
 
-- `Pipeline`
-- `ColumnTransformer` preprocessing
-- `RandomForestClassifier`
+| Component | Value |
+| --- | --- |
+| Model file | `fraud_detection_model.pkl` |
+| Pipeline type | `Pipeline` |
+| Preprocessing | `ColumnTransformer` |
+| Classifier | `RandomForestClassifier` |
 
-Saved classifier settings from the current artifact:
+### Classifier Settings
 
-- `n_estimators=100`
-- `max_depth=15`
-- `class_weight='balanced'`
-- `random_state=42`
-- `n_jobs=-1`
+| Parameter | Value |
+| --- | --- |
+| `n_estimators` | `100` |
+| `max_depth` | `15` |
+| `class_weight` | `'balanced'` |
+| `random_state` | `42` |
+| `n_jobs` | `-1` |
 
 ### Input Features
 
-The model uses:
-
-- `type`
-- `amount`
-- `oldbalanceOrg`
-- `newbalanceOrig`
-- `oldbalanceDest`
-- `newbalanceDest`
-- `balanceDiffOrig`
-- `balanceDiffDest`
-- `isHighRiskCountry`
-
-Engineered features:
-
-- `balanceDiffOrig = oldbalanceOrg - newbalanceOrig`
-- `balanceDiffDest = newbalanceDest - oldbalanceDest`
+| Feature | Type | Notes |
+| --- | --- | --- |
+| `type` | Categorical | Transaction type |
+| `amount` | Numeric | Transaction amount |
+| `oldbalanceOrg` | Numeric | Sender balance before transaction |
+| `newbalanceOrig` | Numeric | Sender balance after transaction |
+| `oldbalanceDest` | Numeric | Receiver balance before transaction |
+| `newbalanceDest` | Numeric | Receiver balance after transaction |
+| `balanceDiffOrig` | Engineered numeric | `oldbalanceOrg - newbalanceOrig` |
+| `balanceDiffDest` | Engineered numeric | `newbalanceDest - oldbalanceDest` |
+| `isHighRiskCountry` | Numeric / binary | Derived from country risk list |
 
 ## Training Notes
 
@@ -75,8 +86,6 @@ Model history:
 2. Logistic regression with engineered balance-difference features
 3. Random forest trained on a rebalanced dataset
 
-Reported notebook metrics for the final random forest were very strong, but they were measured on a balanced dataset, so real-world precision may be lower than the headline results suggest.
-
 The notebook is intended for:
 
 - Exploratory data analysis
@@ -88,69 +97,37 @@ The notebook is intended for:
 
 The notebook contains results for multiple model iterations.
 
-### Logistic Regression Baseline
+### Model Comparison
 
-Training setup:
+| Model | Dataset Setup | Accuracy | Fraud Precision | Fraud Recall | Fraud F1 | ROC AUC |
+| --- | --- | --- | --- | --- | --- | --- |
+| Logistic Regression Baseline | Original imbalanced data, 70/30 split, `class_weight='balanced'` | `94.63%` | `0.02` | `0.95` | `0.04` | Not reported |
+| Logistic Regression With Engineered Features | Original imbalanced data with `balanceDiffOrig` and `balanceDiffDest` | `95%` | `0.02` | `0.94` | `0.04` | `0.990` |
+| Final Random Forest | Rebalanced data using all fraud rows + `100,000` sampled non-fraud rows | Not reported directly | `0.96` | `0.98` | `0.97` | `0.999` |
 
-- Original imbalanced dataset
-- 70/30 train-test split
-- `class_weight='balanced'`
-
-Reported results:
-
-- Accuracy: `94.63%`
-- Fraud precision: `0.02`
-- Fraud recall: `0.95`
-- Fraud F1-score: `0.04`
-
-Confusion matrix:
-
-- True negatives: `1,804,022`
-- False positives: `102,300`
-- False negatives: `132`
-- True positives: `2,332`
-
-### Logistic Regression With Engineered Features
-
-Reported results:
-
-- Accuracy: `95%`
-- Fraud precision: `0.02`
-- Fraud recall: `0.94`
-- Fraud F1-score: `0.04`
-- ROC AUC: `0.990`
-
-### Final Random Forest Model
+### Final Random Forest Class Metrics
 
 This is the model loaded by `fraud_detection.py`.
 
-Training setup:
+| Class | Precision | Recall | F1-score | Support |
+| --- | --- | --- | --- | --- |
+| Not Fraud | `1.00` | `1.00` | `1.00` | `25,001` |
+| Fraud | `0.96` | `0.98` | `0.97` | `2,053` |
 
-- Rebalanced dataset
-- All fraud rows
-- `100,000` sampled non-fraud rows
+### Baseline Confusion Matrix
 
-Reported results:
+| Metric | Value |
+| --- | --- |
+| True Negatives | `1,804,022` |
+| False Positives | `102,300` |
+| False Negatives | `132` |
+| True Positives | `2,332` |
 
-- Not-fraud precision: `1.00`
-- Not-fraud recall: `1.00`
-- Fraud precision: `0.96`
-- Fraud recall: `0.98`
-- Fraud F1-score: `0.97`
-- ROC AUC: `0.999`
-
-Evaluation support in the notebook:
-
-- Not fraud: `25,001`
-- Fraud: `2,053`
-
-Note:
-
-- The final random forest metrics were measured on a balanced dataset, so real-world precision may be lower on naturally imbalanced production data.
+Note: the final random forest metrics were measured on a balanced dataset, so real-world precision may be lower on naturally imbalanced production data.
 
 ## Repository Structure
 
-Repository files:
+Core repository files:
 
 ```text
 .
@@ -164,7 +141,7 @@ Runtime dependency:
 
 - `fraud_detection_model.pkl` must exist in the project root when you run the app
 
-If the model file is not committed to the repo, place it manually in the project root before starting Streamlit.
+If the model file is not committed to the repo, place it manually in the project root before starting the app.
 
 ## Requirements
 
@@ -219,7 +196,7 @@ Make sure `fraud_detection_model.pkl` exists in the project root.
 
 ## Run The App
 
-Start Streamlit with:
+Run the application with:
 
 ```bash
 streamlit run fraud_detection.py
@@ -249,7 +226,7 @@ http://localhost:8501
 6. Set the fraud threshold.
 7. Click `Predict Single Transaction`.
 
-The app will return:
+The app returns:
 
 - Fraud probability
 - Fraud / legitimate prediction
@@ -303,7 +280,7 @@ High-risk countries currently used by the app:
 
 ## App Logic
 
-In addition to the model prediction, the UI adds a warning for this pattern:
+In addition to the model prediction, the UI applies a warning rule for this pattern:
 
 - `TRANSFER` or `CASH_OUT`
 - `oldbalanceOrg == 0`
@@ -311,7 +288,7 @@ In addition to the model prediction, the UI adds a warning for this pattern:
 - `oldbalanceDest == 0`
 - `newbalanceDest >= amount`
 
-This is treated as a high-risk rule even if the model score is below the current threshold.
+This rule is surfaced even if the model score is below the selected threshold.
 
 ## Known Limitations
 
@@ -331,7 +308,7 @@ This is treated as a high-risk rule even if the model score is below the current
 
 ## Quick Start
 
-If your environment is already ready and the model file exists:
+If the environment is already set up and the model file is present:
 
 ```bash
 streamlit run fraud_detection.py
